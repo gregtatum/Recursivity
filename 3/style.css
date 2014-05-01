@@ -1,64 +1,9 @@
 body {
-	font-family: 'Roboto', sans-serif;
-	background-color: #f0f0f0;
-	margin: 0px;
-	overflow: hidden;
+	background-color: #0a0a0a;
 }
 canvas {
-	width:100%;
-	height:100%;
 	cursor: pointer;
 }
 h1 {
-	font-weight: 800;
-	font-size: 4.3em;
-	color: #4A9DE7;
-	text-transform:uppercase;
-	margin:0;
-	line-height: 1;
-	font-weight: 100;
-}
-.info {
-	position: absolute;
-	bottom: 1em;
-	right: 1em;	
-}
-p {
-    margin: 0;
-    font-weight: 400;
-    text-transform: uppercase;
-    color: #999;
-    letter-spacing: 0.25em;
-}
-.credits {
-    position: absolute;
-    top: 0.5em;
-    right: 0.5em;
-    font-size: 0.7em;
-    color: #777;
-}
-a {
-    color: #4A9DE7;
-}
-a:hover {
-    color: #007BE9;
-    text-decoration: none;
-}
-@media screen and (min-width:1200px) {
-	.info {
-		font-size:1.3em;
-	}
-}
-
-@media screen and (max-width: 600px) {
-	.info {
-		font-size:0.6em;
-		width:100%;
-		text-align:center;
-		right:0;
-	}
-	.credits {
-		right:0;
-		text-align:center;
-	}
+	font-size: 3.1em;
 }
