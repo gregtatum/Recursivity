@@ -1,6 +1,7 @@
 var TwoScene = function() {
 	
 	this.div = document.getElementById( 'container' );
+	this.$message = $('.message');
 	this.$canvas = $('canvas');
 	this.canvas = this.$canvas.get(0);
 	this.ratio = window.devicePixelRatio >= 1 ? window.devicePixelRatio : 1;
@@ -18,19 +19,22 @@ var TwoScene = function() {
 	this.hue = Math.random() * 360;
 	
 	this.resizeCanvas();
-//	this.loop();
-this.reset();
+	//this.loop();
+	this.reset();
 	
 	this.$canvas.on('mousedown', this.onClick.bind(this));
+	this.$message.on('mousedown', this.onClick.bind(this));
 };
 		
 TwoScene.prototype = {
 	
 	onClick : function(e) {
+		e.preventDefault();
+		
 		this.reset();
 		this.render();
 		this.hue += 5;
-		e.preventDefault();
+		this.$message.hide();
 	},
 	
 	addStats : function() {

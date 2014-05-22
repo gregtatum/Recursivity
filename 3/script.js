@@ -1,6 +1,7 @@
 var TwoScene = function() {
 	
 	this.div = document.getElementById( 'container' );
+	this.$message = $('.message');
 	this.$canvas = $('canvas');
 	this.canvas = this.$canvas.get(0);
 	this.ratio = window.devicePixelRatio >= 1 ? window.devicePixelRatio : 1;
@@ -228,6 +229,7 @@ var DrawCurve = function( smoothness, canvas, context, callback ) {
 	this.context = context;
 	this.callback = callback;
 	this.$canvas = $(canvas);
+	this.$message = $('.message');
 	this.points = undefined;
 	this.pointsDistance = undefined;
 	this.drawingCurve = false;
@@ -236,6 +238,7 @@ var DrawCurve = function( smoothness, canvas, context, callback ) {
 	
 	this.doDrawCurve = false;
 	this.doDrawTrail = true;
+	this.ratio = window.devicePixelRatio >= 1 ? window.devicePixelRatio : 1;
 	
 	_.bindAll(this, 'onMouseDown', 'onMouseMove', 'onMouseMoveDone');
 	
@@ -247,6 +250,8 @@ DrawCurve.prototype = {
 	onMouseDown : function(e) {
 		
 		if( this.drawingCurve === false ) {
+			
+			this.$message.hide();
 			
 			this.drawingCurve = true;
 			this.points = [];
@@ -348,6 +353,9 @@ DrawCurve.prototype = {
 	addPoint : function(x, y) {
 		
 		var prev, curr, distance;
+		
+		x *= this.ratio;
+		y *= this.ratio;
 		
 		curr = new THREE.Vector2( x, y );
 		

@@ -4,6 +4,9 @@ body {
 	margin: 0px;
 	overflow: hidden;
 }
+*, *:before, *:after {
+	-moz-box-sizing: border-box; -webkit-box-sizing: border-box; box-sizing: border-box;
+}
 canvas {
 	width:100%;
 	height:100%;
@@ -100,6 +103,19 @@ a:hover {
 }
 .arrow-next {
     right: 0;
+}
+.message {
+	position: absolute;
+	top: 50%;
+	left: 0;
+	width: 100%;
+	margin-top: -0.5em;
+	font-size: 1.7em;
+	text-align: center;
+	text-transform: uppercase;
+	color: rgba(74, 157, 231, 0.65);
+	padding: 0 6%;
+	pointer-events:none;
 }
 @media screen and (max-width: 600px) {
 
