@@ -230,6 +230,7 @@ var DrawCurve = function( smoothness, canvas, context, callback ) {
 	this.callback = callback;
 	this.$canvas = $(canvas);
 	this.$message = $('.message');
+	this.$drawingTarget = $('.drawing-target');
 	this.points = undefined;
 	this.pointsDistance = undefined;
 	this.drawingCurve = false;
@@ -240,9 +241,12 @@ var DrawCurve = function( smoothness, canvas, context, callback ) {
 	this.doDrawTrail = true;
 	this.ratio = window.devicePixelRatio >= 1 ? window.devicePixelRatio : 1;
 	
-	_.bindAll(this, 'onMouseDown', 'onMouseMove', 'onMouseMoveDone');
+	_.bindAll(this, 'onMouseDown', 'onMouseMove', 'onTouchMove', 'onMouseMoveDone');
 	
-	this.$canvas.on('mousedown', this.onMouseDown);
+	this.$drawingTarget.on('mousedown', this.onMouseDown);
+	this.$drawingTarget.on('touchmove', this.onTouchMove );
+	this.$drawingTarget.on('mouseup', this.onMouseMoveDone );
+	this.$drawingTarget.on('mouseout', this.onMouseMoveDone );
 };
 
 DrawCurve.prototype = {
@@ -250,6 +254,8 @@ DrawCurve.prototype = {
 	onMouseDown : function(e) {
 		
 		if( this.drawingCurve === false ) {
+
+			this.$drawingTarget.on('mousemove', this.onMouseMove );
 			
 			this.$message.hide();
 			
@@ -259,17 +265,21 @@ DrawCurve.prototype = {
 			this.distance = 0;
 		
 			this.addPoint( e.offsetX, e.offsetY );
-		
-			this.$canvas.on('mousemove', this.onMouseMove );
-			this.$canvas.on('mouseup', this.onMouseMoveDone );
-			this.$canvas.on('mouseout', this.onMouseMoveDone );
+			
 		}
 	},
 	
 	onMouseMove : function(e) {
-		
+		e.preventDefault();
 		this.addPoint( e.offsetX, e.offsetY );
-		
+	},
+	
+	onTouchMove : function(e) {
+		e.preventDefault();
+		this.addPoint(
+			e.originalEvent.touches[0].pageX,
+			e.originalEvent.touches[0].pageY
+		);
 	},
 	
 	onMouseMoveDone : function(e) {
@@ -277,14 +287,11 @@ DrawCurve.prototype = {
 		var points, i, prev, curr, curve,
 			ctx = this.context;
 
+		this.$drawingTarget.off('mousemove', this.onMouseMove );
+
 		this.drawingCurve = false;
 		
 		this.addPoint( e.offsetX, e.offsetY );
-
-		this.$canvas.off('mousemove', this.onMouseMove );
-		this.$canvas.off('mouseup', this.onMouseMove );
-		this.$canvas.off('mouseout', this.onMouseMoveDone );
-		
 		
 		line = this.smoothLine();
 		curve = new BezierCurveFromLine( line, 0.3 );

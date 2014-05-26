@@ -7,3 +7,17 @@ canvas {
 h1 {
 	font-size: 3.1em;
 }
+.drawing-target {
+	position:absolute;
+	top:0;
+	left:0;
+	width:100%;
+	height:100%;
+	z-index:2;
+}
+.info {
+	z-index:3;
+}
+.message {
+	z-index:1;
+}
