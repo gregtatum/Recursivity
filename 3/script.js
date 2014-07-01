@@ -11,7 +11,7 @@ var TwoScene = function() {
 	this.childLength = 0.9;
 	this.baseTheta = Math.PI * (80 / 180);
 	this.nodeLevels = 7;
-	this.lineWidth = 8;
+	this.lineWidth = 8 * this.ratio;
 	
 	
 	//this.addStats();
@@ -85,7 +85,7 @@ TwoScene.prototype = {
 		this.childLength = this.random(0.9, 0.99);
 		this.baseTheta = Math.PI * (90 / 180) * this.random(0.5, 1);
 		this.nodeLevels = Math.round( 9 * this.random(0.7, 1) );
-		this.lineWidth = 20 * this.random(0.3, 1);
+		this.lineWidth = 20 * this.random(0.3, 1) * this.ratio;
 		this.hue += 30;
 		
 	},
@@ -241,21 +241,43 @@ var DrawCurve = function( smoothness, canvas, context, callback ) {
 	this.doDrawTrail = true;
 	this.ratio = window.devicePixelRatio >= 1 ? window.devicePixelRatio : 1;
 	
-	_.bindAll(this, 'onMouseDown', 'onMouseMove', 'onTouchMove', 'onMouseMoveDone');
-	
-	this.$drawingTarget.on('mousedown', this.onMouseDown);
-	this.$drawingTarget.on('touchmove', this.onTouchMove );
-	this.$drawingTarget.on('mouseup', this.onMouseMoveDone );
-	this.$drawingTarget.on('mouseout', this.onMouseMoveDone );
+	this.$drawingTarget.on('mousedown', this.onMouseDown.bind(this) );
+	this.$drawingTarget.on('touchmove', this.onTouchMove.bind(this) );
+	this.$drawingTarget.on('mouseup', this.onMouseMoveDone.bind(this) );
+	this.$drawingTarget.on('touchstart', this.onTouchStart.bind(this) );
 };
 
 DrawCurve.prototype = {
+	
+	onTouchStart : function(e) {
+		e.preventDefault();
+		
+		if( this.drawingCurve === false ) {
+
+			this.$drawingTarget.on('mousemove', this.onMouseMove.bind(this) );
+			this.$drawingTarget.on('mouseout', this.onMouseMoveDone.bind(this) );
+			
+			this.$message.hide();
+			
+			this.drawingCurve = true;
+			this.points = [];
+			this.pointsDistance = [];
+			this.distance = 0;
+			
+			this.addPoint(
+				e.originalEvent.touches[0].pageX,
+				e.originalEvent.touches[0].pageY
+			);
+			
+		}
+	},
 	
 	onMouseDown : function(e) {
 		
 		if( this.drawingCurve === false ) {
 
-			this.$drawingTarget.on('mousemove', this.onMouseMove );
+			this.$drawingTarget.on('mousemove', this.onMouseMove.bind(this) );
+			this.$drawingTarget.on('mouseout', this.onMouseMoveDone.bind(this) );
 			
 			this.$message.hide();
 			
@@ -271,11 +293,13 @@ DrawCurve.prototype = {
 	
 	onMouseMove : function(e) {
 		e.preventDefault();
+		
 		this.addPoint( e.offsetX, e.offsetY );
 	},
 	
 	onTouchMove : function(e) {
 		e.preventDefault();
+		
 		this.addPoint(
 			e.originalEvent.touches[0].pageX,
 			e.originalEvent.touches[0].pageY
@@ -283,11 +307,11 @@ DrawCurve.prototype = {
 	},
 	
 	onMouseMoveDone : function(e) {
-		
 		var points, i, prev, curr, curve,
 			ctx = this.context;
 
-		this.$drawingTarget.off('mousemove', this.onMouseMove );
+		this.$drawingTarget.off('mousemove');
+		this.$drawingTarget.off('mouseout');
 
 		this.drawingCurve = false;
 		
@@ -399,7 +423,7 @@ DrawCurve.prototype = {
 		
 		var ctx = this.context;
 		
-		ctx.lineWidth = 15;
+		ctx.lineWidth = 15 * this.ratio;
 		ctx.strokeStyle = TwoScene.prototype.hslToFillStyle(180, 50, 80, 1);
 		ctx.beginPath();
 		ctx.lineCap = "round";
