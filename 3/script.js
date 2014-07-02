@@ -243,8 +243,8 @@ var DrawCurve = function( smoothness, canvas, context, callback ) {
 	
 	this.$drawingTarget.on('mousedown', this.onMouseDown.bind(this) );
 	this.$drawingTarget.on('touchmove', this.onTouchMove.bind(this) );
-	this.$drawingTarget.on('mouseup', this.onMouseMoveDone.bind(this) );
 	this.$drawingTarget.on('touchstart', this.onTouchStart.bind(this) );
+	
 };
 
 DrawCurve.prototype = {
@@ -254,8 +254,8 @@ DrawCurve.prototype = {
 		
 		if( this.drawingCurve === false ) {
 
-			this.$drawingTarget.on('mousemove', this.onMouseMove.bind(this) );
-			this.$drawingTarget.on('mouseout', this.onMouseMoveDone.bind(this) );
+			this.$drawingTarget.on('touchmove', this.onTouchMove.bind(this) );
+			this.$drawingTarget.on('touchend', this.onTouchEnd.bind(this) );
 			
 			this.$message.hide();
 			
@@ -278,6 +278,7 @@ DrawCurve.prototype = {
 
 			this.$drawingTarget.on('mousemove', this.onMouseMove.bind(this) );
 			this.$drawingTarget.on('mouseout', this.onMouseMoveDone.bind(this) );
+			this.$drawingTarget.on('mouseup', this.onMouseMoveDone.bind(this) );
 			
 			this.$message.hide();
 			
@@ -306,16 +307,31 @@ DrawCurve.prototype = {
 		);
 	},
 	
+	onTouchEnd : function() {
+		
+		this.$drawingTarget.off('touchmove', this.onTouchMove.bind(this) );
+		this.$drawingTarget.off('touchend', this.onTouchEnd.bind(this) );
+		
+		this.endInteractionAndDrawTree();
+	},
+	
 	onMouseMoveDone : function(e) {
 		var points, i, prev, curr, curve,
 			ctx = this.context;
 
 		this.$drawingTarget.off('mousemove');
 		this.$drawingTarget.off('mouseout');
-
-		this.drawingCurve = false;
+		this.$drawingTarget.off('mouseup');
+		
 		
 		this.addPoint( e.offsetX, e.offsetY );
+		
+		this.endInteractionAndDrawTree();
+	},
+	
+	endInteractionAndDrawTree : function() {
+		
+		this.drawingCurve = false;
 		
 		line = this.smoothLine();
 		curve = new BezierCurveFromLine( line, 0.3 );
@@ -327,6 +343,7 @@ DrawCurve.prototype = {
 		if(typeof this.callback === 'function') {
 			this.callback( curve );
 		}
+		
 	},
 	
 	smoothLine : function() {
