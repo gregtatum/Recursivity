@@ -19,9 +19,10 @@ var TwoScene = function() {
 	
 	this.resizeCanvas();
 //	this.loop();
-this.reset();
+	this.reset();
 	
 	this.$canvas.on('mousedown', this.onClick.bind(this));
+	this.$canvas.on('touchstart', this.onClick.bind(this));
 };
 		
 TwoScene.prototype = {

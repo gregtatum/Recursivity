@@ -5,34 +5,82 @@ var TwoScene = function() {
 	this.canvas = this.$canvas.get(0);
 	this.ratio = window.devicePixelRatio >= 1 ? window.devicePixelRatio : 1;
 	this.context = this.canvas.getContext( '2d' );
-	
-	this.numberOfChildNodes = 3;
-	this.childLength = 0.9;
-	this.baseTheta = Math.PI * (80 / 180);
-	this.nodeLevels = 7;
-	this.lineWidth = 8;
-	
-	this.treeEvery = 30;
-	this.treeI = 0;
+	this.depth = 3;
+
+	this.resizeCanvas();
 	
 	
-	//this.addStats();
+	this.circle = new Circle();
+	this.setupCircle();
+	
+	this.addStats();
 	this.addEventListeners();
 	this.hue = Math.random() * 360;
 	
-	this.reset();
-	this.resizeCanvas(false);
+	
+	this.ct = new Date().getTime();
+	this.pt = this.ct;
+	this.dt = 0;
+	
 	this.loop();
 	
-	this.$canvas.on('mousedown', this.onClick.bind(this));
+	this.thetaChange = 0;
+	
+	this.$canvas.on('mousedown', this.mouseDown.bind(this));
+	//this.$message.on('mousedown', this.mouseDown.bind(this));
 };
 		
 TwoScene.prototype = {
 	
-	onClick : function(e) {
-		this.reset();
-		this.hue += 5;
+	mouseDown : function(e) {
+		
+		pCircle = this.circle;
+		
 		e.preventDefault();
+		
+		
+		
+		if(e.which == 1) {
+			this.depth++;
+		} else {
+			this.depth = Math.max( 2, this.depth - 1 );
+		}
+		
+		this.circle = new Circle();
+		this.circle.theta = pCircle.theta;
+		
+		
+		
+		this.setupCircle();
+		
+		return false;
+	},
+	
+	setupCircle : function() {
+		
+		Circle.prototype.instruments = [];
+		
+		this.circle.h = Math.floor(Math.random() * 360);
+		this.circle.s = 50;
+		this.circle.l = 50;
+		this.circle.a = 0.1;
+		
+		this.fillStyle = this.hslToFillStyle(
+			this.circle.h - 10,
+			this.circle.s,
+			70,
+			0.1
+		);
+		
+		this.circle.theta = Math.random() * 2 * Math.PI;
+		
+		this.circle.isRoot = true;
+		
+		this.circle.updateColor();
+		
+		this.updateBaseCircle();
+		
+		this.generateCircle( this.circle, this.depth );
 	},
 	
 	addStats : function() {
@@ -54,15 +102,19 @@ TwoScene.prototype = {
 		this.left = this.$canvas.offset().left;
 		this.top = this.$canvas.offset().top;
 		
-		if(e) {
-			this.render();
-		}
+		//this.render();
 	},
-			
+	
 	loop : function() {
+		
+		this.pt = this.ct;
+		this.ct = new Date().getTime();
+		this.dt = this.ct - this.pt;
+		
+		this.update( this.dt );
+		this.render( this.dt );
 
 		requestAnimationFrame( this.loop.bind(this) );
-		this.render();
 
 	},
 	
@@ -82,158 +134,307 @@ TwoScene.prototype = {
 		}
 	},
 	
-	reset : function() {
-		//this.context.fillStyle = this.rgbToFillStyle(255, 255, 255);
-		//this.context.fillRect(0,0,this.width, this.height);
+	updateBaseCircle : function() {
+		this.circle.center.x = (this.canvas.width * this.ratio) / 2;
+		this.circle.center.y = (this.canvas.height * this.ratio) / 2;
+		this.circle.radius = Math.max(
+			this.circle.center.x,
+			this.circle.center.y
+		);
+	},
+	
+	generateCircle : function( parent, targetLevel ) {
+
+		var circle1, circle2,
+			currentLevel = targetLevel - 1,
+			thetaOffset = Math.PI / 10;
 		
-		this.context.fillStyle = this.rgbToFillStyle(255, 255, 255, 0.8);
+		if( currentLevel > 0 ) {
+			
+			circle1 = new Circle();
+			circle2 = new Circle();
+			
+			parent.addChildren( circle1, circle2 );
+			
+			circle1.generate( parent, parent.theta + thetaOffset );
+			circle2.generate( parent, parent.theta + thetaOffset + Math.PI );
+				
+			this.generateCircle( circle1, currentLevel );
+			this.generateCircle( circle2, currentLevel );
+		}
+	},
+	
+	update : function( dt ) {
+		this.circle.update( dt );
+	},
+	
+	render : function( dt ) {
+		this.stats.update();
+		
+		this.context.fillStyle = this.fillStyle;
 		this.context.fillRect(0,0,this.width, this.height);
 		
-		this.childLength = 0.98 * this.random(0.8, 1);
-		this.baseTheta = Math.PI * (90 / 180) * this.random(0.5, 1);
-		this.nodeLevels = Math.round( 9 * this.random(0.7, 1) );
-		this.lineWidth = 20 * this.random(0.3, 1);
-		this.hue += 30;
+		//this.context.clearRect(0,0,this.width, this.height);
 		
-		this.baseNode = new LineNode();
+		this.circle.draw( this.context );
 		
-		this.baseNode.beg.x = this.width / 2;
-		this.baseNode.beg.y = this.height;
-		this.baseNode.end.x = this.width / 2;
-		this.baseNode.end.y = this.height * 9 / 10;
-		this.baseNode.update();
-		
-	},
-	
-	random : function(min, max) {
-	  return Math.random() * (max - min) + min;
-	},
-	
-	generateLine : function( prevLineNode, prevLevel, totalLevels ) {
-		
-		totalLevels *= 1.1;
-		
-		var i;
-		var lineNode = new LineNode();
-		var currentLevel = prevLevel - 1;
-		var ratioTop = (totalLevels - currentLevel) / totalLevels;
-		var ratioBottom = currentLevel / totalLevels;
-		var randomness = 2 * (Math.random() - 0.5);
-		var thetaChange = this.baseTheta * randomness * ratioTop;
-		var theta = prevLineNode.theta - thetaChange; //Theta is the previous angle, minus base theta
-		var hyp = prevLineNode.distance * this.childLength;
-		
-		lineNode.beg.copy(prevLineNode.end);
-		lineNode.end.x = prevLineNode.end.x + ( hyp ) * Math.cos( theta );
-		lineNode.end.y = prevLineNode.end.y + ( hyp ) * Math.sin( theta );
-		
-		lineNode.update();
-		
-		prevLineNode.children.push( lineNode );
-		lineNode.parent = prevLineNode;
-		
-		if(currentLevel > 0) {
-			for(i=0; i < this.numberOfChildNodes; i++) {
-				this.generateLine( lineNode, currentLevel, totalLevels );
-			}
-		}
-		
-	},
-	
-	renderTree : function( lineNode, prevLevel, totalLevels ) {
-
-		var ratio = prevLevel / totalLevels;
-		var ratio2 = ( (ratio * ratio) + ratio ) / 2;
-		var ratioFlipped = (totalLevels - prevLevel) / totalLevels
-		var siblings, nodeIndex, p1, p2, p3;
-		
-		this.callCount++;
-		
-		this.context.lineWidth = ratio2 * this.lineWidth;
-		
-		this.context.beginPath();
-		this.context.moveTo( lineNode.beg.x, lineNode.beg.y );
-		this.context.lineTo( lineNode.end.x, lineNode.end.y );
-		this.context.strokeStyle = this.hslToFillStyle(
-			this.hue - 90 * ratio + (this.callCount / 20),
-			30 * (1 - ratio2) + 10,
-			(30 * (1 - ratio) + 30) * this.random(0.8, 1),
-			0.6 * ratioFlipped * ratioFlipped
-		);
-		this.context.stroke();
-		this.context.closePath();
-		
-		
-		if( lineNode.parent ) {
-			
-			siblings = lineNode.parent.children;
-			nodeIndex = siblings.indexOf( lineNode );
-		
-			if( nodeIndex > 0 ) {
-				p1 = lineNode.beg;
-				p2 = lineNode.end;
-				p3 = siblings[ nodeIndex - 1 ].end;
-			
-				this.context.beginPath();
-				this.context.moveTo( p1.x, p1.y );
-				this.context.lineTo( p2.x, p2.y );
-				this.context.lineTo( p3.x, p3.y );
-				this.context.fillStyle = this.hslToFillStyle(
-					this.hue - 90 * ratio + (this.callCount / 20),
-					30 * (1 - ratio2) + 10,
-					(30 * (1 - ratio) + 30) * this.random(0.8, 1),
-					0.6 * ratioFlipped * ratioFlipped
-				);;
-				this.context.fill();
-				this.context.closePath();
-			}
-		}
-		
-	   	for(var i=0; i < lineNode.children.length; i++) {
-	   		this.renderTree(
-				lineNode.children[i],
-				prevLevel - 1,
-				totalLevels
-			);
-	   	}
-	},
-	
-	render : function() {
-		//this.stats.update();
-		//this.context.fillStyle = this.rgbToFillStyle(255, 255, 255, 0.99);
-		//this.context.fillRect(0,0,this.width, this.height);
-		
-		if(this.treeI === 0) {
-			this.context.strokeStyle = this.hslToFillStyle(180, 50, 50);
-			this.context.lineCap = "round";
-			this.callCount = 0;
-			this.generateLine( this.baseNode, this.nodeLevels, this.nodeLevels );
-			this.renderTree( this.baseNode, this.nodeLevels, this.nodeLevels );
-		}
-		this.treeI++;
-		this.treeI %= this.treeEvery;
 	}
 	
 };
 
-var LineNode = function() {
-	this.beg = new THREE.Vector2();
-	this.end = new THREE.Vector2();
-	this.segment = new THREE.Vector2;
-	this.distance = undefined;
+var Circle = function() {
+	this.center = new THREE.Vector2();
+	this.radius;
+	this.depth = 0;
+	this.theta = 0;
 	
+	this.h;
+	this.s;
+	this.l;
+	this.a;
+
+	this.tickDistance = Math.PI / 10;
+	this.totalTick = 2000;
+	this.currentTick = 0;
+
 	this.children = [];
-	this.parent = undefined;
+	this.hasChildren = false;
+	this.parent;
+	this.firstPlay = true;
+	
+	this.fillStyle;
+	this.strokeStyle;
+}
+
+Circle.prototype = {
+	
+	instruments : [],
+	
+	generate : function( parent, theta ) {
+		
+		this.parent = parent;
+				
+		this.theta = theta;
+		this.prevTheta = theta;
+		
+		this.depth = parent.depth + 1;
+		this.radius = (parent.radius / 2);
+		this.isRoot = false;
+		this.startThreshold = (this.totalTick / 75) * this.depth;
+		this.startDelay = 0;
+		
+		this.update(0);
+		
+		this.h = parent.h + 40;
+		this.s = parent.s;
+		this.l = parent.l;
+		this.a = parent.a + 0.2;
+
+		this.updateColor();
+		
+		if( !this.instruments[this.depth] ) {
+			this.instruments[this.depth] = true;
+			this.instrument = new Instrument();
+			this.instrument.baseGain = 1 - ((10 - this.depth) / 10);
+			this.instrument.setFrequency( 600 + this.depth * 50 );
+		}
+	},
+	
+	updateColor : function() {
+		
+		this.fillStyle = TwoScene.prototype.hslToFillStyle(
+			this.h,
+			this.s,
+			this.l,
+			this.a
+		);
+		
+		this.strokeStyle = TwoScene.prototype.hslToFillStyle(
+			this.h,
+			this.s,
+			this.l / 2,
+			this.a
+		);	
+	},
+	
+	addChildren : function( child1, child2 ) {
+		
+		this.children.push( child1 );
+		this.children.push( child2 );
+		
+		this.hasChildren = true;
+	},
+	
+	update : function( dt ) {
+		
+		//Figure out initial delay
+		this.startDelay += dt;
+		if(this.startDelay < this.startThreshold) {
+			return;
+		} else {
+			if( this.firstPlay && this.instrument ) {
+				this.instrument.tick();
+			}
+			this.firstPlay = false;
+			
+		}
+		
+		//Increment the current tick
+		this.currentTick += dt;
+		this.currentTick = Math.min( this.currentTick, this.totalTick );
+		
+		//Update the theta
+		this.theta = jQuery.easing.easeOutElastic(
+			null,
+			this.currentTick,
+			this.prevTheta,
+			this.tickDistance * this.depth,
+			this.totalTick
+		);
+		
+		//Set a new tick if needed
+		if( this.currentTick === this.totalTick ) {
+			this.currentTick = 0;
+			this.prevTheta = this.theta;
+			
+			if(this.instrument) {
+				this.instrument.tick();
+			}
+		}
+		
+		if( !this.isRoot ) {
+			this.center.x = this.parent.center.x + Math.cos( this.theta ) * this.radius;
+			this.center.y = this.parent.center.y + Math.sin( this.theta ) * this.radius;
+		}
+		
+		if( this.hasChildren ) {
+			this.children[0].update( dt );
+			this.children[1].update( dt );
+		}
+	},
+	
+	draw : function( ctx ) {
+		
+		ctx.beginPath();
+		ctx.fillStyle = this.fillStyle;
+		ctx.strokeStyle = this.strokeStyle;
+		ctx.lineWidth = 10 / (this.depth + 1);
+		//ctx.fillStyle = "rgba(0, 0, 200, 0.5)";
+		ctx.arc(
+			this.center.x,
+			this.center.y,
+			this.radius,
+			0, 2 * Math.PI
+		);
+		ctx.fill();
+		ctx.stroke();
+		ctx.closePath();
+
+		if( this.hasChildren ) {
+			this.children[0].draw( ctx );
+			this.children[1].draw( ctx );
+		}
+	}
+}
+
+Instrument = function() {
+	
+	//Test to make sure the AudioContext is available
+	this.enabled = ( this.context !== undefined );
+	
+	if(!this.enabled) return;
+	
+	this.baseGain = 1;
+	
+	//Define audio nodes
+	this.panner;
+	this.oscillator;
+	this.gain;
+	this.bandpass;
+	
+	this.setupNodes();
 };
 
-LineNode.prototype = {
-	update : function() {
+Instrument.prototype = {
+	
+	context : AudioContext ? new AudioContext() : undefined, //Create only 1 audio context
+	
+	setupNodes : function() {
+		this.panner = this.context.createPanner();
+		this.panner.panningModel = 'equalpower';
+		this.panner.coneOuterGain = 0.1;
+		this.panner.coneOuterAngle = 180;
+		this.panner.coneInnerAngle = 0;
+	
+		this.oscillator = this.context.createOscillator();
+		this.oscillator.type = "sawtooth";
+		this.oscillator.frequency.value = 1000;	
+		/*
+			enum OscillatorType {
+			  "sine",
+			  "square",
+			  "sawtooth",
+			  "triangle",
+			  "custom"
+			}
+		*/
 
-		this.segment.x = this.end.x - this.beg.x;
-		this.segment.y = this.end.y - this.beg.y;
+		this.gain = this.context.createGain();
+		this.gain.gain.value = 0;
+	
+		this.bandpass = this.context.createBiquadFilter();
+		this.bandpass.type = "bandpass";
+		this.bandpass.frequency.value = 440;
+		this.bandpass.Q.value = 0.5;
+
+		this.context.listener.setPosition(0, 0, 0);
+
+		/*
+		this.oscillator.connect( this.bandpass );
+		this.bandpass.connect( this.panner );
+		this.panner.connect( this.gain );
+		this.gain.connect( this.context.destination );
+		*/
 		
-		this.distance = Math.sqrt( this.segment.x * this.segment.x + this.segment.y * this.segment.y );
-		this.theta = Math.atan2( this.segment.y, this.segment.x );
+		this.oscillator.connect( this.gain );
+		this.gain.connect( this.context.destination )
+		this.oscillator.start(0);
+	},
+	
+	//Interact with audio:
+	
+	tick : function() {
+		this.gain.gain.setTargetAtTime(this.baseGain, this.context.currentTime, 0)
+		this.gain.gain.setTargetAtTime(0, this.context.currentTime + .001, 0.2)
+	},
+	
+	setFrequency : function ( frequency ) {
+		if(!this.enabled) return;
+		this.oscillator.frequency.setTargetAtTime(frequency, this.context.currentTime, 0.1);
+	},
+	
+	setPosition : function ( x, y, z ) {
+		if(!this.enabled) return;
+		this.panner.setPosition( x, y, z );
+	},
+	
+	setGain : function ( gain ) {
+		if(!this.enabled) return;
+		Math.max( Math.abs( gain ), 1);
+		
+		gain / this.totalCreatedSq;
+				
+		this.gain.gain.setTargetAtTime(gain, this.context.currentTime, 0.1)
+	},
+	
+	setBandpassQ : function ( Q ) {
+		if(!this.enabled) return;
+		this.bandpass.Q.setTargetAtTime(Q, this.context.currentTime, 0.1);
+	},
+	
+	setBandpassFrequency : function ( frequency ) {
+		if(!this.enabled) return;
+		this.bandpass.frequency.setTargetAtTime(frequency, this.context.currentTime, 0.1);
 	}
 };
 
