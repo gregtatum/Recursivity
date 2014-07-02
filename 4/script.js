@@ -13,7 +13,7 @@ var TwoScene = function() {
 	this.circle = new Circle();
 	this.setupCircle();
 	
-	this.addStats();
+	//this.addStats();
 	this.addEventListeners();
 	this.hue = Math.random() * 360;
 	
@@ -135,8 +135,8 @@ TwoScene.prototype = {
 	},
 	
 	updateBaseCircle : function() {
-		this.circle.center.x = (this.canvas.width * this.ratio) / 2;
-		this.circle.center.y = (this.canvas.height * this.ratio) / 2;
+		this.circle.center.x = (this.canvas.width) / 2;
+		this.circle.center.y = (this.canvas.height) / 2;
 		this.circle.radius = Math.max(
 			this.circle.center.x,
 			this.circle.center.y
@@ -169,7 +169,7 @@ TwoScene.prototype = {
 	},
 	
 	render : function( dt ) {
-		this.stats.update();
+		//this.stats.update();
 		
 		this.context.fillStyle = this.fillStyle;
 		this.context.fillRect(0,0,this.width, this.height);
