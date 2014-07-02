@@ -18,6 +18,10 @@ var TwoScene = function() {
 	this.addEventListeners();
 	this.hue = Math.random() * 360;
 	
+	//Disable scroll on old iOS devices
+	$(document).on('touchmove', false);
+	
+	
 	this.resizeCanvas();
 	//this.loop();
 	//this.reset();
