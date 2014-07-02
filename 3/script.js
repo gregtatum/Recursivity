@@ -291,7 +291,7 @@ DrawCurve.prototype = {
 			this.pointsDistance = [];
 			this.distance = 0;
 		
-			this.addPoint( e.offsetX, e.offsetY );
+			this.addPoint( e.pageX, e.pageY );
 			
 		}
 	},
@@ -299,7 +299,7 @@ DrawCurve.prototype = {
 	onMouseMove : function(e) {
 		e.preventDefault();
 		
-		this.addPoint( e.offsetX, e.offsetY );
+		this.addPoint( e.pageX, e.pageY );
 	},
 	
 	onTouchMove : function(e) {
@@ -328,7 +328,7 @@ DrawCurve.prototype = {
 		this.$drawingTarget.off('mouseup');
 		
 		
-		this.addPoint( e.offsetX, e.offsetY );
+		this.addPoint( e.pageX, e.pageY );
 		
 		this.endInteractionAndDrawTree();
 	},
