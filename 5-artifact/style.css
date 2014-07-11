@@ -1,0 +1,32 @@
+body {
+	background-color: #ddd;
+}
+canvas {
+	cursor: pointer;
+	position: absolute;
+	top:0;
+	left:0;
+}
+h1 {
+	font-size: 3.1em;
+}
+.drawing-target {
+	position:absolute;
+	top:0;
+	left:0;
+	width:100%;
+	height:100%;
+	z-index:3;
+}
+.info {
+	z-index:4;
+}
+.message {
+	z-index:2;
+}
+.canvas2d {
+	z-index:1
+}
+.canvas3d {
+	z-index:0;
+}
