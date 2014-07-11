@@ -3,6 +3,16 @@ var Utils = {
 	  return Math.random() * (max - min) + min;
 	},
 	
+	randomLow : function(min, max) {
+		//More likely to return a low value
+	  return Math.random() * Math.random() * (max - min) + min;
+	},
+	
+	randomHigh : function(min, max) {
+		//More likely to return a high value
+		return (1 - Math.random() * Math.random()) * (max - min) + min;
+	},
+	
 	rgbToFillStyle : function(r, g, b, a) {
 		if(a === undefined) {
 			return ["rgb(",r,",",g,",",b,")"].join('');
@@ -22,8 +32,7 @@ var Utils = {
 
 var Poem = function() {
 	
-	var supportsWebGL = ( function () { try { return !! window.WebGLRenderingContext && !! document.createElement( 'canvas' ).getContext( 'experimental-webgl' ); } catch( e ) { return false; } } )();
-	
+	this.supportsWebGL = ( function () { try { return !! window.WebGLRenderingContext && !! document.createElement( 'canvas' ).getContext( 'experimental-webgl' ); } catch( e ) { return false; } } )();
 	
 	this.div = document.getElementById( 'container' );
 	this.$message = $('.message');
@@ -90,7 +99,7 @@ Poem.prototype = {
 	
 	addRenderer : function() {
 		var renderer
-		if (window.WebGLRenderingContext) {
+		if(this.supportsWebGL) {
 			renderer = THREE.WebGLRenderer;
 		} else {
 		 	renderer = THREE.CanvasRenderer;
@@ -175,7 +184,7 @@ Poem.prototype = {
 	
 	addEventListeners : function() {
 		$(window).on('resize', this.resizeCanvas.bind(this));
-		$(document).on('touchmove', false);
+		$('.drawing-target').on('touchmove', false);
 		$(document).on('mousemove', this.onMouseMove.bind(this));
 	},
 	
@@ -259,18 +268,20 @@ var Tree = function( scene ) {
 Tree.prototype = {
 	
 	reset : function() {
+		
+		var variance, uniformity, avgMin, avgMax;
+		
 		this.maxChildNodes = Math.round( Utils.random(2, 4) );
 		this.childLength = Utils.random(0.9, 0.99);
 		this.baseTheta = Math.PI * (90 / 180) * Utils.random(0.5, 1);
 		this.nodeLevels = Math.round( 9 * Utils.random(0.7, 1) );
 		this.lineWidth = 20 * Utils.random(0.3, 1) * this.ratio;
 		this.hue += 30;
+		this.hueShift = Utils.randomLow(1, 50);
 		
-		this.lineMaterial.linewidth = Utils.random(1,10);
+		this.lineMaterial.linewidth = Utils.randomLow(1,10);
 		
-		var variance = Utils.random(0.3, 1.4);
-		
-		variance = 1.4;
+		variance = Utils.random(0.3, 1.4);
 		
 		this.thetaMin.set(
 			Utils.random(-1 * variance, 0),
@@ -283,6 +294,26 @@ Tree.prototype = {
 			Utils.random(0, variance),
 			Utils.random(0, variance)
 		);
+		
+		
+		uniformity = Utils.random(0, 1);
+		avgMin = uniformity * Math.min( -1, (this.thetaMin.x + this.thetaMin.y + this.thetaMin.z) / 3 );
+		avgMax = uniformity * Math.max(  1, (this.thetaMax.x + this.thetaMax.y + this.thetaMax.z) / 3 );
+		
+		this.thetaMin.multiplyScalar( uniformity - 1 );
+		this.thetaMax.multiplyScalar( uniformity - 1 );
+		
+		this.thetaMin.x += avgMin;
+		this.thetaMin.y += avgMin;
+		this.thetaMin.z += avgMin;
+		this.thetaMax.x += avgMax;
+		this.thetaMax.y += avgMax;
+		this.thetaMax.z += avgMax;
+		
+		
+		//this.thetaMin.x = this.thetaMin.x + this.thetaMin.y + this.thetaMin.z;
+		//this.thetaMax.x = this.thetaMax.x + this.thetaMax.y + this.thetaMax.z;
+		
 		
 		
 		this.rotationSpeed.set(
@@ -321,7 +352,7 @@ Tree.prototype = {
 		//for(i=1; i ==1 && i < curve.line.length; i++) {
 		for(i=1; i < curve.line.length; i++) {
 			
-			this.hue += 10;
+			this.hue += this.hueShift;
 			this.hue %= 360;
 			this.lineWidth *= 0.92;
 			

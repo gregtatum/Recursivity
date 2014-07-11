@@ -212,6 +212,8 @@ Circle.prototype = {
 	
 	generate : function( parent, theta ) {
 		
+		var notes;
+		
 		this.parent = parent;
 				
 		this.theta = theta;
@@ -232,11 +234,18 @@ Circle.prototype = {
 
 		this.updateColor();
 		
-		if( !this.instruments[this.depth] ) {
-			this.instruments[this.depth] = true;
+		if( !this.instruments[this.depth - 1] ) {
+			this.instruments[this.depth - 1] = true;
+			
 			this.instrument = new Instrument();
-			this.instrument.baseGain = 1 - ((10 - this.depth) / 10);
-			this.instrument.setFrequency( 600 + this.depth * 50 );
+			this.instrument.baseGain = ((10 - this.depth) / 15);
+			this.instrument.setGain( 0, 0 );
+			
+			notes = this.instrument.notes;
+			this.instrument.setFrequency(
+				notes[ (this.depth - 1) % notes.length ],
+				0
+			);
 		}
 	},
 	
@@ -355,9 +364,21 @@ Instrument = function() {
 	this.setupNodes();
 };
 
+var VendorsAudioContext = window.AudioContext || window.webkitAudioContext || false;
+
 Instrument.prototype = {
 	
-	context : AudioContext ? new AudioContext() : undefined, //Create only 1 audio context
+	context : VendorsAudioContext ? new VendorsAudioContext() : undefined, //Create only 1 audio context
+	
+	notes : function() {
+		
+		var eMinor7th = Note.fromLatin('B3D3E3G3B4D4E4G4B5D5E5G5B6D6E6G6');
+		
+		return eMinor7th.map(function(note) {
+			return note.frequency();
+		});
+		
+	}(),
 	
 	setupNodes : function() {
 		this.panner = this.context.createPanner();
@@ -408,8 +429,9 @@ Instrument.prototype = {
 		this.gain.gain.setTargetAtTime(0, this.context.currentTime + .001, 0.2)
 	},
 	
-	setFrequency : function ( frequency ) {
+	setFrequency : function ( frequency, speed ) {
 		if(!this.enabled) return;
+		speed = speed || 0.1;
 		this.oscillator.frequency.setTargetAtTime(frequency, this.context.currentTime, 0.1);
 	},
 	
@@ -418,10 +440,11 @@ Instrument.prototype = {
 		this.panner.setPosition( x, y, z );
 	},
 	
-	setGain : function ( gain ) {
+	setGain : function ( gain, speed ) {
 		if(!this.enabled) return;
 		Math.max( Math.abs( gain ), 1);
 		
+		speed = speed || 0.1;
 		gain / this.totalCreatedSq;
 				
 		this.gain.gain.setTargetAtTime(gain, this.context.currentTime, 0.1)
