@@ -109,6 +109,7 @@ TwoScene.prototype = {
 		var ratioTop = (totalLevels - currentLevel) / totalLevels;
 		var ratioBottom = currentLevel / totalLevels;
 		var randomness = 2 * (Math.random() - 0.5);
+		//var randomness = Math.floor( 6 * (Math.random()) ) - 3;
 		var thetaChange = this.baseTheta * randomness * ratioTop;
 		var theta = prevLineNode.theta - thetaChange; //Theta is the previous angle, minus base theta
 		var hyp = prevLineNode.distance * this.childLength;
