@@ -575,7 +575,6 @@ CurveDrawingLayer.prototype = {
 		
 		if( this.drawingCurve === false ) {
 
-			this.$drawingTarget.on('touchmove', this.onTouchMove.bind(this) );
 			this.$drawingTarget.on('touchend', this.onTouchEnd.bind(this) );
 			
 			this.$message.hide();
@@ -587,6 +586,11 @@ CurveDrawingLayer.prototype = {
 			
 			this.addPoint(
 				e.originalEvent.touches[0].pageX,
+				e.originalEvent.touches[0].pageY
+			);
+			
+			console.clear();
+			console.log(	e.originalEvent.touches[0].pageX,
 				e.originalEvent.touches[0].pageY
 			);
 			
@@ -630,8 +634,7 @@ CurveDrawingLayer.prototype = {
 	
 	onTouchEnd : function() {
 		
-		this.$drawingTarget.off('touchmove', this.onTouchMove.bind(this) );
-		this.$drawingTarget.off('touchend', this.onTouchEnd.bind(this) );
+		this.$drawingTarget.off('touchend');
 		
 		this.endInteractionAndDrawTree();
 	},
@@ -652,6 +655,10 @@ CurveDrawingLayer.prototype = {
 	
 	endInteractionAndDrawTree : function() {
 		
+		console.log(this.points.length);
+		console.log(this.points.map(function( pt ) {
+			return Math.floor( pt.x ) + ", " + Math.floor( pt.y );
+		}));
 		this.drawingCurve = false;
 		
 		line = this.smoothLine();
